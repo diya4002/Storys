@@ -73,6 +73,12 @@
     .post:hover {
       background-color: #f9f9f9;
     }
+    .post-position {
+      font-size: 16px;
+      font-weight: bold;
+      color: #4a2c1e;
+      margin-bottom: 10px;
+    }
     .post-title {
       font-size: 18px;
       color: #4a2c1e;
@@ -116,6 +122,9 @@
     @media (max-width: 600px) {
       .post {
         padding: 10px;
+      }
+      .post-position {
+        font-size: 14px;
       }
       .post-title {
         font-size: 16px;
@@ -251,13 +260,20 @@
         container.innerHTML = '<div class="error">No posts found for the selected tag.</div>';
         return;
       }
-      rows.forEach(row => {
+      rows.forEach((row, index) => {
+        const position = index + 1; // Position starts from 1
         const title = row.Title;
         let message = row.Message || 'No message provided';
         const tags = row.Tags;
         const postDiv = document.createElement('div');
         postDiv.className = 'post';
         postDiv.onclick = () => openPostPage(title, message, tags);
+
+        // Add position number
+        const positionElement = document.createElement('div');
+        positionElement.className = 'post-position';
+        positionElement.textContent = `#${position}`;
+        postDiv.appendChild(positionElement);
 
         const titleElement = document.createElement('h2');
         titleElement.className = 'post-title';
@@ -280,7 +296,7 @@
           const tagList = tags.split(',').map(tag => tag.trim());
           tagList.forEach(tag => {
             const tagSpan = document.createElement('span');
-            tagSpan.textContent = `#${tag}`;
+            tagSpan.textContent = tag; // Remove '#' from tag display
             tagsElement.appendChild(tagSpan);
           });
         } else {
