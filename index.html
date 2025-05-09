@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sex Stories</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #f5ecd8;
+      margin: 0;
+      padding: 10px;
+    }
+    h1 {
+      text-align: center;
+      color: #4a2c1e;
+      font-size: 24px;
+      margin: 10px 0;
+    }
+    h1 span {
+      font-size: 16px;
+      color: #4a2c1e;
+    }
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #d2b48c;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .nav-bar select {
+      padding: 5px;
+      border: none;
+      background-color: #d2b48c;
+      color: #4a2c1e;
+      font-size: 16px;
+    }
+    .nav-bar a {
+      color: #4a2c1e;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    .nav-bar a:hover {
+      text-decoration: underline;
+    }
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    .post {
+      background-color: #fff;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .post:hover {
+      background-color: #f9f9f9;
+    }
+    .post-title {
+      font-size: 18px;
+      color: #4a2c1e;
+      margin: 0 0 10px;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      hyphens: auto;
+    }
+    .post-title:hover {
+      color: #6b3e26;
+    }
+    .post-message {
+      font-size: 16px;
+      color: #34495e;
+      margin-bottom: 10px;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      hyphens: auto;
+    }
+    .post-tags {
+      font-size: 14px;
+      color: #666;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      hyphens: auto;
+    }
+    .post-tags a {
+      color: #4a2c1e;
+      text-decoration: none;
+      margin-right: 5px;
+      white-space: nowrap;
+    }
+    .post-tags a:hover {
+      text-decoration: underline;
+    }
+    .error {
+      color: #e74c3c;
+      text-align: center;
+      font-size: 16px;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    @media (max-width: 600px) {
+      .post {
+        padding: 10px;
+      }
+      .post-title {
+        font-size: 16px;
+      }
+      .post-message {
+        font-size: 14px;
+      }
+      .post-tags {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Sex Stories <br> <span>अंतर्वासना सेक्स कहानियाँ</span></h1>
+
+  <div class="nav-bar">
+    <select id="tag-filter">
+      <option value="">All Tags ▼</option>
+    </select>
+  </div>
+
+  <div class="container" id="data-container"></div>
+
+  <script>
+    // OpenSheet API URL (Ensure this Google Sheet is publicly shared)
+    const SHEET_JSON_URL = 'https://opensheet.elk.sh/12ztLodAK-rcTxscpNl5Niyo5tByci6hvkXSpYfse4uQ/Sheet1';
+
+    // Store fetched data globally
+    let allPosts = [];
+
+    // Sample data as a fallback if the Google Sheet fails to load
+    const sampleData = [
+      {
+        Title: "Sample Story 1",
+        Message: "This is a sample story message that is longer than 250 characters to test truncation. It should show the 'read more' text but not as a clickable link. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        Tags: "romance, drama"
+      },
+      {
+        Title: "Sample Story 2",
+        Message: "A shorter message that won't be truncated.",
+        Tags: "comedy, love"
+      }
+    ];
+
+    // Fetch and process JSON data
+    function fetchSheetData() {
+      const container = document.getElementById('data-container');
+      container.innerHTML = '<div>Loading data...</div>';
+      
+      fetch(SHEET_JSON_URL)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.status} - ${response.statusText}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Fetched data:', data);
+          if (data && data.length > 0) {
+            allPosts = data;
+            console.log('All posts:', allPosts);
+            populateTagFilter();
+            displayPosts(allPosts.slice().reverse());
+          } else {
+            console.warn('No data found in Google Sheet, using sample data instead.');
+            allPosts = sampleData;
+            populateTagFilter();
+            displayPosts(allPosts.slice().reverse());
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+          displayError(`Error fetching data: ${error.message}. Using sample data instead. Please ensure the Google Sheet is publicly shared and the URL is correct.`);
+          allPosts = sampleData;
+          populateTagFilter();
+          displayPosts(allPosts.slice().reverse());
+        });
+    }
+
+    // Populate the tag filter dropdown with unique tags from posts
+    function populateTagFilter() {
+      const select = document.getElementById('tag-filter');
+      select.innerHTML = '<option value="">All Tags ▼</option>';
+      const allTags = new Set();
+      allPosts.forEach(row => {
+        if (row.Tags) {
+          row.Tags.split(',').map(tag => tag.trim()).forEach(tag => allTags.add(tag));
+        }
+      });
+      const sortedTags = Array.from(allTags).sort((a, b) => a.localeCompare(b));
+      console.log('Populating dropdown with tags:', sortedTags);
+      sortedTags.forEach(tag => {
+        const option = document.createElement('option');
+        option.value = tag;
+        option.textContent = tag;
+        select.appendChild(option);
+      });
+      select.addEventListener('change', filterPostsByTag);
+    }
+
+    // Filter posts based on selected tag
+    function filterPostsByTag() {
+      const selectedTag = document.getElementById('tag-filter').value;
+      let filteredPosts;
+      if (selectedTag) {
+        filteredPosts = allPosts.filter(row => {
+          if (!row.Tags) return false;
+          const tags = row.Tags.split(',').map(tag => tag.trim());
+          return tags.includes(selectedTag);
+        });
+      } else {
+        filteredPosts = allPosts;
+      }
+      displayPosts(filteredPosts.slice().reverse());
+    }
+
+    // Navigate to post.html with post details as query parameters
+    function openPostPage(title, message, tags) {
+      // Encode the data to handle special characters in the URL
+      const encodedTitle = encodeURIComponent(title || 'Untitled');
+      const encodedMessage = encodeURIComponent(message || 'No message provided');
+      const encodedTags = encodeURIComponent(tags || '');
+      // Redirect to post.html with query parameters
+      window.location.href = `post.html?title=${encodedTitle}&message=${encodedMessage}&tags=${encodedTags}`;
+    }
+
+    // Display posts in the container
+    function displayPosts(rows) {
+      const container = document.getElementById('data-container');
+      container.innerHTML = '';
+      if (rows.length === 0) {
+        container.innerHTML = '<div class="error">No posts found for the selected tag.</div>';
+        return;
+      }
+      rows.forEach(row => {
+        const title = row.Title;
+        let message = row.Message || 'No message provided';
+        const tags = row.Tags;
+        const postDiv = document.createElement('div');
+        postDiv.className = 'post';
+        postDiv.onclick = () => openPostPage(title, message, tags);
+
+        const titleElement = document.createElement('h2');
+        titleElement.className = 'post-title';
+        titleElement.textContent = title || 'Untitled';
+        postDiv.appendChild(titleElement);
+
+        const messageElement = document.createElement('p');
+        messageElement.className = 'post-message';
+        if (message.length > 250) {
+          const truncatedMessage = message.substring(0, 250);
+          messageElement.textContent = truncatedMessage + '...read more';
+        } else {
+          messageElement.textContent = message;
+        }
+        postDiv.appendChild(messageElement);
+
+        const tagsElement = document.createElement('div');
+        tagsElement.className = 'post-tags';
+        if (tags) {
+          const tagList = tags.split(',').map(tag => tag.trim());
+          tagList.forEach(tag => {
+            const tagLink = document.createElement('a');
+            tagLink.href = `#${tag}`;
+            tagLink.textContent = `#${tag}`;
+            tagsElement.appendChild(tagLink);
+          });
+        } else {
+          tagsElement.textContent = 'No tags';
+        }
+        postDiv.appendChild(tagsElement);
+        container.appendChild(postDiv);
+      });
+    }
+
+    // Display error message
+    function displayError(message) {
+      const container = document.getElementById('data-container');
+      container.innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    // Load data when the page loads
+    window.onload = fetchSheetData;
+  </script>
+</body>
+</html>
