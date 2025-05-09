@@ -23,19 +23,31 @@
     }
     .nav-bar {
       display: flex;
-      justify-content: space-between;
+      justify-content: center; /* Center the dropdown */
       align-items: center;
       background-color: #d2b48c;
       padding: 10px;
       border-radius: 5px;
       margin-bottom: 20px;
+      width: 100%; /* Ensure nav-bar is full width */
+      max-width: 100%;
     }
     .nav-bar select {
+      width: 100%; /* Full width of nav-bar */
+      max-width: 100%; /* Prevent overflow */
       padding: 5px;
       border: none;
       background-color: #d2b48c;
       color: #4a2c1e;
       font-size: 16px;
+      text-align: center; /* Center text in dropdown */
+      -webkit-appearance: none; /* Remove default browser styling */
+      -moz-appearance: none;
+      appearance: none;
+      cursor: pointer;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%234a2c1e" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 10px center;
     }
     .nav-bar a {
       color: #4a2c1e;
@@ -256,7 +268,6 @@
         messageElement.className = 'post-message';
         if (message.length > 250) {
           const truncatedMessage = message.substring(0, 250);
-          // Modified to make "read more" bold
           messageElement.innerHTML = `${truncatedMessage}...<strong>read more</strong>`;
         } else {
           messageElement.textContent = message;
