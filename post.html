@@ -55,12 +55,36 @@
     .back-link:hover {
       text-decoration: underline;
     }
+    .audio-controls {
+      margin-top: 15px;
+    }
+    .audio-button {
+      background-color: #4a2c1e;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      margin-right: 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .audio-button:hover {
+      background-color: #6b4226;
+    }
+    .audio-button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1 id="post-title">Loading...</h1>
     <p id="post-message">Loading...</p>
+    <div class="audio-controls">
+      <button id="play-audio" class="audio-button" disabled>Play Audio</button>
+      <button id="download-audio" class="audio-button" disabled>Download Audio</button>
+    </div>
     <div class="tags" id="post-tags">Loading...</div>
     <a href="index.html" class="back-link">Back</a>
   </div>
@@ -76,6 +100,7 @@
     const title = getQueryParam('title') || 'Untitled';
     const message = getQueryParam('message') || 'No message provided';
     const tags = getQueryParam('tags') || '';
+    const audioUrl = getQueryParam('audioUrl') || ''; // Assume audio URL is passed as a query parameter
 
     // Display the post details
     document.getElementById('post-title').textContent = title;
@@ -87,6 +112,53 @@
       tagsElement.innerHTML = tagList.map(tag => `<a href="#">#${tag}</a>`).join('');
     } else {
       tagsElement.textContent = 'No tags';
+    }
+
+    // Audio handling
+    const playButton = document.getElementById('play-audio');
+    const downloadButton = document.getElementById('download-audio');
+    let audio = null;
+
+    if (audioUrl) {
+      // Enable buttons if audio URL is provided
+      playButton.disabled = false;
+      downloadButton.disabled = false;
+
+      // Initialize audio element
+      audio = new Audio(audioUrl);
+
+      // Play audio on button click
+      playButton.addEventListener('click', () => {
+        if (audio.paused) {
+          audio.play().catch(error => {
+            console.error('Error playing audio:', error);
+            alert('Failed to play audio.');
+          });
+          playButton.textContent = 'Pause Audio';
+        } else {
+          audio.pause();
+          playButton.textContent = 'Play Audio';
+        }
+      });
+
+      // Download audio on button click
+      downloadButton.addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.href = audioUrl;
+        link.download = `${title.replace(/\s+/g, '_')}.mp3`; // Suggest a filename
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+
+      // Reset button text when audio ends
+      audio.addEventListener('ended', () => {
+        playButton.textContent = 'Play Audio';
+      });
+    } else {
+      // Keep buttons disabled and show a message if no audio URL
+      playButton.title = 'No audio available';
+      downloadButton.title = 'No audio available';
     }
   </script>
 </body>
