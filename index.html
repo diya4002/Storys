@@ -87,14 +87,10 @@
       word-break: break-word;
       hyphens: auto;
     }
-    .post-tags a {
+    .post-tags span {
       color: #4a2c1e;
-      text-decoration: none;
       margin-right: 5px;
       white-space: nowrap;
-    }
-    .post-tags a:hover {
-      text-decoration: underline;
     }
     .error {
       color: #e74c3c;
@@ -260,7 +256,8 @@
         messageElement.className = 'post-message';
         if (message.length > 250) {
           const truncatedMessage = message.substring(0, 250);
-          messageElement.textContent = truncatedMessage + '...read more';
+          // Modified to make "read more" bold
+          messageElement.innerHTML = `${truncatedMessage}...<strong>read more</strong>`;
         } else {
           messageElement.textContent = message;
         }
@@ -271,10 +268,9 @@
         if (tags) {
           const tagList = tags.split(',').map(tag => tag.trim());
           tagList.forEach(tag => {
-            const tagLink = document.createElement('a');
-            tagLink.href = `#${tag}`;
-            tagLink.textContent = `#${tag}`;
-            tagsElement.appendChild(tagLink);
+            const tagSpan = document.createElement('span');
+            tagSpan.textContent = `#${tag}`;
+            tagsElement.appendChild(tagSpan);
           });
         } else {
           tagsElement.textContent = 'No tags';
