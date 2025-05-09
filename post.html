@@ -69,8 +69,9 @@
     <p id="post-message">Loading...</p>
     <div class="tags" id="post-tags">Loading...</div>
     <div class="audio-controls">
-      <button id="play-button">Play Message</button>
-      <button id="pause-button" style="display: none;">Pause Message</button>
+      <button id="play-button">Play Audio</button>
+      <button id="pause-button" style="display: none;">Pause Audio</button>
+      <button id="download-button" style="display: none;">Download Audio</button>
     </div>
   </div>
 
@@ -104,9 +105,11 @@
     speech.text = message;
     speech.lang = 'en-IN'; // You can change the language code if needed
     let isSpeaking = false;
+    let audioBlobUrl = null;
 
     const playButton = document.getElementById('play-button');
     const pauseButton = document.getElementById('pause-button');
+    const downloadButton = document.getElementById('download-button');
 
     playButton.addEventListener('click', () => {
       if (!isSpeaking) {
@@ -126,7 +129,7 @@
     pauseButton.addEventListener('click', () => {
       if (isSpeaking) {
         speechSynthesis.pause();
-        playButton.textContent = 'Resume Message';
+        playButton.textContent = 'Resume Audio';
         playButton.style.display = 'inline-block';
         pauseButton.style.display = 'none';
       }
@@ -140,8 +143,59 @@
       isSpeaking = true;
       playButton.style.display = 'none';
       pauseButton.style.display = 'inline-block';
-      playButton.textContent = 'Play Message'; // Reset text for next play
+      playButton.textContent = 'Play Audio'; // Reset text for next play
     };
+
+    // Function to convert text to audio and create a download link
+    function textToAudio(text, lang = 'en-IN') {
+      return new Promise((resolve, reject) => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        const voices = speechSynthesis.getVoices();
+        utterance.voice = voices.find(voice => voice.lang === lang) || voices[0]; // Try to find the specified language voice
+
+        const chunks = [];
+        speechSynthesis.addEventListener('boundary', (event) => {
+          if (event.name === 'sentence') {
+            const chunkUtterance = new SpeechSynthesisUtterance(text.substring(event.charIndex, event.charIndex + event.charLength));
+            chunkUtterance.lang = lang;
+            chunkUtterance.voice = utterance.voice;
+            speechSynthesis.speak(chunkUtterance);
+          }
+        });
+
+        utterance.onend = () => {
+          resolve();
+        };
+
+        utterance.onerror = (event) => {
+          reject(event.error);
+        };
+
+        // This approach of directly capturing audio stream is not directly supported by the Web Speech API for security and privacy reasons.
+        // We can only trigger the speech synthesis. Downloading the generated audio requires browser-specific extensions or server-side processing.
+
+        // As a workaround, we'll enable the download button once the speech object is created.
+        downloadButton.style.display = 'inline-block';
+        downloadButton.addEventListener('click', () => {
+          alert("Download functionality is limited by browser capabilities for direct text-to-speech audio capture. Consider browser extensions or server-side solutions for audio download.");
+        });
+
+        // We still need to speak the utterance for the play functionality
+        speechSynthesis.speak(utterance);
+      });
+    }
+
+    // Call the text to audio function when the page loads
+    window.addEventListener('load', () => {
+      // We are directly using the speechSynthesis API for play/pause.
+      // Direct audio download from the browser's speech synthesis is generally not supported due to security and privacy reasons.
+      // The download button will serve as a notification about this limitation.
+      downloadButton.style.display = 'inline-block';
+      downloadButton.addEventListener('click', () => {
+        alert("Direct download of synthesized audio is not supported by standard browser APIs. You might need browser extensions or server-side solutions for this functionality.");
+      });
+    });
   </script>
 </body>
 </html>
