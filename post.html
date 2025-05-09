@@ -23,7 +23,7 @@
     h1 {
       color: #4a2c1e;
       font-size: 24px;
-      margin: 0 0 20px;
+      margin: 0 0 15px;
     }
     p {
       color: #34495e;
@@ -32,16 +32,34 @@
       overflow-wrap: break-word;
       word-break: break-word;
       hyphens: auto;
+      margin-bottom: 15px;
     }
     .tags {
       font-size: 14px;
       color: #666;
-      margin-top: 20px;
+      margin-top: 15px;
+      margin-bottom: 15px;
       display: inline-block; /* Ensure tags are centered as a block */
     }
     .tags span {
       color: #4a2c1e;
       margin-right: 5px;
+    }
+    .audio-controls {
+      margin-top: 20px;
+    }
+    .audio-controls button {
+      padding: 8px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #5cb85c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin: 0 5px;
+    }
+    .audio-controls button:hover {
+      background-color: #4cae4c;
     }
   </style>
 </head>
@@ -50,6 +68,10 @@
     <h1 id="post-title">Loading...</h1>
     <p id="post-message">Loading...</p>
     <div class="tags" id="post-tags">Loading...</div>
+    <div class="audio-controls">
+      <button id="play-button">Play Message</button>
+      <button id="pause-button" style="display: none;">Pause Message</button>
+    </div>
   </div>
 
   <script>
@@ -66,7 +88,8 @@
 
     // Display the post details
     document.getElementById('post-title').textContent = title;
-    document.getElementById('post-message').textContent = message;
+    const messageElement = document.getElementById('post-message');
+    messageElement.textContent = message;
 
     const tagsElement = document.getElementById('post-tags');
     if (tags) {
@@ -75,6 +98,50 @@
     } else {
       tagsElement.textContent = 'No tags';
     }
+
+    // Text-to-speech functionality
+    const speech = new SpeechSynthesisUtterance();
+    speech.text = message;
+    speech.lang = 'en-IN'; // You can change the language code if needed
+    let isSpeaking = false;
+
+    const playButton = document.getElementById('play-button');
+    const pauseButton = document.getElementById('pause-button');
+
+    playButton.addEventListener('click', () => {
+      if (!isSpeaking) {
+        speechSynthesis.speak(speech);
+        isSpeaking = true;
+        playButton.style.display = 'none';
+        pauseButton.style.display = 'inline-block';
+
+        speech.onended = () => {
+          isSpeaking = false;
+          playButton.style.display = 'inline-block';
+          pauseButton.style.display = 'none';
+        };
+      }
+    });
+
+    pauseButton.addEventListener('click', () => {
+      if (isSpeaking) {
+        speechSynthesis.pause();
+        playButton.textContent = 'Resume Message';
+        playButton.style.display = 'inline-block';
+        pauseButton.style.display = 'none';
+      }
+    });
+
+    speechSynthesis.onpause = () => {
+      isSpeaking = false;
+    };
+
+    speechSynthesis.onresume = () => {
+      isSpeaking = true;
+      playButton.style.display = 'none';
+      pauseButton.style.display = 'inline-block';
+      playButton.textContent = 'Play Message'; // Reset text for next play
+    };
   </script>
 </body>
 </html>
