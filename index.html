@@ -136,6 +136,32 @@
       width: 100%;
       max-width: 800px;
     }
+    .speech-error {
+      color: #e74c3c;
+      font-size: 14px;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .play-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #4a2c1e;
+      margin: 10px auto;
+      display: block;
+      transition: color 0.3s;
+    }
+    .play-button:hover {
+      color: #6b3e26;
+    }
+    .play-button.playing {
+      color: #e74c3c;
+    }
+    .play-button:disabled {
+      color: #ccc;
+      cursor: not-allowed;
+    }
     @media (max-width: 600px) {
       .post {
         padding: 10px;
@@ -150,6 +176,12 @@
         font-size: 14px;
       }
       .post-tags {
+        font-size: 12px;
+      }
+      .play-button {
+        font-size: 18px;
+      }
+      .speech-error {
         font-size: 12px;
       }
     }
@@ -178,12 +210,12 @@
     const sampleData = [
       {
         Title: "Sample Story 1",
-        Message: "This is a sample story message that is longer than 250 characters to test truncation. It should show the 'read more' text but not as a clickable link. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        Message: "This is a sample story message. It has multiple sentences. Each sentence should be read separately. This is to test the line-by-line reading feature.",
         Tags: "romance, drama"
       },
       {
         Title: "Sample Story 2",
-        Message: "A shorter message that won't be truncated.",
+        Message: "A shorter message. It has two sentences. Let's see how it works.",
         Tags: "comedy, love"
       }
     ];
@@ -260,6 +292,14 @@
       displayPosts(filteredPosts.slice().reverse());
     }
 
+    // Function to split message into lines (sentences)
+    function splitIntoLines(text) {
+      if (!text) return ['No message provided'];
+      // Split by sentence-ending punctuation (.!?) followed by space or end of string
+      const sentences = text.match(/[^.!?]+[.!?]|\S+/g) || [text];
+      return sentences.map(s => s.trim()).filter(s => s);
+    }
+
     // Display posts in the container
     function displayPosts(rows) {
       const container = document.getElementById('data-container');
@@ -269,13 +309,12 @@
         return;
       }
       rows.forEach((row, index) => {
-        const position = index + 1; // Position starts from 1
+        const position = index + 1;
         const title = row.Title;
         let message = row.Message || 'No message provided';
         const tags = row.Tags;
         const postDiv = document.createElement('div');
         postDiv.className = 'post';
-        // Store the state of whether the message is expanded
         let isExpanded = false;
 
         // Add position number
@@ -286,7 +325,7 @@
 
         const titleElement = document.createElement('h2');
         titleElement.className = 'post-title';
-        titleElement.textContent = title || 'Untitled';
+        titleElement.textContent = title || 'Untitled  Untitled';
         postDiv.appendChild(titleElement);
 
         const messageElement = document.createElement('p');
@@ -318,22 +357,90 @@
 
         // Toggle message on click
         postDiv.addEventListener('click', (e) => {
-          // Prevent the click on the read more/less text from bubbling up
-          if (e.target === readMoreSpan) {
+          if (e.target === readMoreSpan || e.target.classList.contains('play-button')) {
             e.stopPropagation();
+            return;
           }
           isExpanded = !isExpanded;
           updateMessageDisplay();
         });
 
-        // Handle click on read more/less specifically
+        // Handle click on read more/less
         readMoreSpan.addEventListener('click', (e) => {
-          e.stopPropagation(); // Prevent postDiv click handler
+          e.stopPropagation();
           isExpanded = !isExpanded;
           updateMessageDisplay();
         });
 
         postDiv.appendChild(messageElement);
+
+        // Check for Web Speech API support
+        if ('speechSynthesis' in window) {
+          // Add play/pause button
+          const playButton = document.createElement('button');
+          playButton.className = 'play-button';
+          playButton.innerHTML = '▶';
+          playButton.setAttribute('aria-label', 'Play audio');
+          playButton.setAttribute('tabindex', '0'); // Improve accessibility
+          let isPlaying = false;
+          let currentLineIndex = 0;
+          const lines = splitIntoLines(message);
+          let continueReading = false;
+
+          // Function to speak the current line and continue to the next
+          function speakLine() {
+            if (!continueReading || currentLineIndex >= lines.length) {
+              isPlaying = false;
+              continueReading = false;
+              playButton.innerHTML = '▶';
+              playButton.classList.remove('playing');
+              playButton.setAttribute('aria-label', 'Play audio');
+              currentLineIndex = 0; // Reset to start for next play
+              return;
+            }
+
+            const textToSpeak = lines[currentLineIndex];
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'en-US'; // Adjust language as needed
+            utterance.onend = () => {
+              currentLineIndex++;
+              if (currentLineIndex >= lines.length) {
+                currentLineIndex = 0; // Loop back to start
+              }
+              speakLine(); // Continue with the next line
+            };
+            window.speechSynthesis.speak(utterance);
+            isPlaying = true;
+            playButton.innerHTML = '⏸';
+            playButton.classList.add('playing');
+            playButton.setAttribute('aria-label', 'Pause audio');
+          }
+
+          playButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const speech = window.speechSynthesis;
+
+            if (isPlaying) {
+              speech.cancel();
+              isPlaying = false;
+              continueReading = false;
+              playButton.innerHTML = '▶';
+              playButton.classList.remove('playing');
+              playButton.setAttribute('aria-label', 'Play audio');
+            } else {
+              continueReading = true;
+              speakLine();
+            }
+          });
+
+          postDiv.appendChild(playButton);
+        } else {
+          // Display error message for unsupported browsers
+          const errorMessage = document.createElement('div');
+          errorMessage.className = 'speech-error';
+          errorMessage.textContent = 'आपका ब्राउज़र स्पीच सपोर्ट नहीं करता है। (Your browser does not support speech.)';
+          postDiv.appendChild(errorMessage);
+        }
 
         const tagsElement = document.createElement('div');
         tagsElement.className = 'post-tags';
