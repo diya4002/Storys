@@ -348,16 +348,16 @@
         });
       }
 
-      // Map filtered posts to their original indices and positions
+      // Map filtered posts to their indices and positions (newest first)
       const postsWithIndices = filteredPosts.map(row => {
         const originalIndex = allPosts.indexOf(row);
-        const originalPosition = allPosts.length - originalIndex; // Original position
+        const originalPosition = originalIndex + 1; // Position: 1 for first post, 2 for second, etc.
         return {
           row,
           originalIndex,
           originalPosition
         };
-      }).sort((a, b) => b.originalPosition - a.originalPosition); // Sort by original position (descending)
+      }).sort((a, b) => b.originalIndex - a.originalIndex); // Sort by originalIndex (descending) to keep newest first
 
       displayPosts(postsWithIndices);
     }
@@ -380,7 +380,7 @@
       const fragment = window.location.hash; // e.g., "#post-1"
       if (fragment && fragment.startsWith('#post-')) {
         const postId = parseInt(fragment.replace('#post-', '')); // Extract the ID (e.g., 1)
-        const postIndex = allPosts.length - postId; // Map postId to index (reverse order)
+        const postIndex = postId - 1; // Map postId to index (0-based)
         if (postIndex >= 0 && postIndex < allPosts.length) {
           // Display only the specific post
           displayPosts([{ row: allPosts[postIndex], originalIndex: postIndex, originalPosition: postId }], postId);
@@ -388,12 +388,12 @@
           displayError(`Post with ID ${postId} not found.`);
         }
       } else {
-        // Display all posts in reverse order with their original positions
+        // Display all posts with their positions (newest first, no reverse)
         const postsWithIndices = allPosts.map((row, index) => ({
           row,
           originalIndex: index,
-          originalPosition: allPosts.length - index
-        })).reverse();
+          originalPosition: index + 1 // Position: 1 for first post, 2 for second, etc.
+        })).sort((a, b) => b.originalIndex - a.originalIndex); // Sort by originalIndex (descending)
         displayPosts(postsWithIndices);
       }
     }
