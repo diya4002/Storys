@@ -191,7 +191,7 @@
     }
     .hide-telegram-link img {
       width: 100%;
-      max-width: 150px; /* Reduced size */
+      max-width: 150px;
       height: auto;
       cursor: pointer;
     }
@@ -222,7 +222,7 @@
         margin-bottom: 10px;
       }
       .hide-telegram-link img {
-        max-width: 120px; /* Smaller size for mobile */
+        max-width: 120px;
       }
     }
   </style>
@@ -328,6 +328,8 @@
       const selectedTag = document.getElementById('tag-filter').value;
       const searchQuery = document.getElementById('search-input').value.toLowerCase();
       let filteredPosts = allPosts;
+
+      // Apply tag filter
       if (selectedTag) {
         filteredPosts = allPosts.filter(row => {
           if (!row.Tags) return false;
@@ -335,7 +337,8 @@
           return tags.includes(selectedTag);
         });
       }
-      // Apply search filter if search query exists
+
+      // Apply search filter
       if (searchQuery) {
         filteredPosts = filteredPosts.filter(row => {
           const title = (row.Title || '').toLowerCase();
@@ -344,11 +347,18 @@
           return title.includes(searchQuery) || message.includes(searchQuery) || tags.includes(searchQuery);
         });
       }
-      // Map filtered posts to their original indices to preserve correct post IDs
-      const postsWithIndices = filteredPosts.map(row => ({
-        row,
-        originalIndex: allPosts.indexOf(row)
-      }));
+
+      // Map filtered posts to their original indices and positions
+      const postsWithIndices = filteredPosts.map(row => {
+        const originalIndex = allPosts.indexOf(row);
+        const originalPosition = allPosts.length - originalIndex; // Original position
+        return {
+          row,
+          originalIndex,
+          originalPosition
+        };
+      }).sort((a, b) => b.originalPosition - a.originalPosition); // Sort by original position (descending)
+
       displayPosts(postsWithIndices);
     }
 
@@ -373,15 +383,16 @@
         const postIndex = allPosts.length - postId; // Map postId to index (reverse order)
         if (postIndex >= 0 && postIndex < allPosts.length) {
           // Display only the specific post
-          displayPosts([{ row: allPosts[postIndex], originalIndex: postIndex }], postId);
+          displayPosts([{ row: allPosts[postIndex], originalIndex: postIndex, originalPosition: postId }], postId);
         } else {
           displayError(`Post with ID ${postId} not found.`);
         }
       } else {
-        // Display all posts in reverse order
+        // Display all posts in reverse order with their original positions
         const postsWithIndices = allPosts.map((row, index) => ({
           row,
-          originalIndex: index
+          originalIndex: index,
+          originalPosition: allPosts.length - index
         })).reverse();
         displayPosts(postsWithIndices);
       }
@@ -395,9 +406,9 @@
         container.innerHTML = '<div class="error">No posts found for the selected tag or search query.</div>';
         return;
       }
-      postsWithIndices.forEach(({ row, originalIndex }) => {
-        // Calculate position: use forcedPosition for single post, else use original index in reverse order
-        const position = forcedPosition !== null ? forcedPosition : allPosts.length - originalIndex;
+      postsWithIndices.forEach(({ row, originalIndex, originalPosition }) => {
+        // Use forcedPosition if provided (e.g., from URL fragment), otherwise use the original position
+        const position = forcedPosition !== null ? forcedPosition : originalPosition;
         const title = row.Title;
         let message = row.Message || 'No message provided';
         const tags = row.Tags;
@@ -409,7 +420,7 @@
         // Add position number
         const positionElement = document.createElement('div');
         positionElement.className = 'post-position';
-        positionElement.textContent = `#${position}`;
+        positionElement.textContent = `#${position}`; // Use the original or forced position
         postDiv.appendChild(positionElement);
 
         const titleElement = document.createElement('h2');
