@@ -180,9 +180,21 @@
     .share-button {
       font-size: 18px;
     }
-.hide-telegram-link {
-    display: block;
-  }
+    .hide-telegram-link {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin: 10px 0;
+    }
+    .hide-telegram-link a {
+      display: inline-block;
+    }
+    .hide-telegram-link img {
+      width: 100%;
+      max-width: 150px; /* Reduced size */
+      height: auto;
+      cursor: pointer;
+    }
     @media (max-width: 600px) {
       .post {
         padding: 10px;
@@ -209,6 +221,9 @@
         width: 100%;
         margin-bottom: 10px;
       }
+      .hide-telegram-link img {
+        max-width: 120px; /* Smaller size for mobile */
+      }
     }
   </style>
 </head>
@@ -220,11 +235,11 @@
       <option value="">All Tags ▼</option>
     </select>
 
-<div class="hide-telegram-link">
-  <a href="https://t.me/+srJskB--ND5hZjI1" target="_blank">
-    <img src="https://www.mp4moviez.law/img/tg.png" alt="Join Our Telegram Group" style="width: 100%; max-width: 300px; height: auto; cursor: pointer;">
-  </a>
-</div>
+    <div class="hide-telegram-link">
+      <a href="https://t.me/+srJskB--ND5hZjI1" target="_blank">
+        <img src="https://www.mp4moviez.law/img/tg.png" alt="Join Our Telegram Group" style="width: 100%; max-width: 150px; height: auto; cursor: pointer;">
+      </a>
+    </div>
     <input type="text" id="search-input" placeholder="Search posts...">
   </div>
 
