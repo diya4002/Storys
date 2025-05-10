@@ -261,12 +261,12 @@
             allPosts = data;
             console.log('All posts:', allPosts);
             populateTagFilter();
-            displayPosts(allPosts.slice().reverse());
+            displayPostsByFragment();
           } else {
             console.warn('No data found in Google Sheet, using sample data instead.');
             allPosts = sampleData;
             populateTagFilter();
-            displayPosts(allPosts.slice().reverse());
+            displayPostsByFragment();
           }
         })
         .catch(error => {
@@ -274,7 +274,7 @@
           displayError(`Error fetching data: ${error.message}. Using sample data instead. Please ensure the Google Sheet is publicly shared and the URL is correct.`);
           allPosts = sampleData;
           populateTagFilter();
-          displayPosts(allPosts.slice().reverse());
+          displayPostsByFragment();
         });
     }
 
@@ -327,7 +327,7 @@
 
     // Add search input event listener
     function setupSearch() {
-      const searchInput = document.getElementById('search-input');
+      const searchInput = regional.getElementById('search-input');
       searchInput.addEventListener('input', filterPostsByTag);
     }
 
@@ -338,8 +338,26 @@
       return sentences.map(s => s.trim()).filter(s => s);
     }
 
+    // Display posts based on URL fragment or all posts
+    function displayPostsByFragment() {
+      const fragment = window.location.hash; // e.g., "#post-1"
+      if (fragment && fragment.startsWith('#post-')) {
+        const postId = fragment.replace('#post-', ''); // Extract the ID (e.g., "1")
+        const postIndex = allPosts.length - parseInt(postId); // Convert to index (reverse order)
+        if (postIndex >= 0 && postIndex < allPosts.length) {
+          // Display only the specific post
+          displayPosts([allPosts[postIndex]], parseInt(postId));
+        } else {
+          displayError(`Post with ID ${postId} not found.`);
+        }
+      } else {
+        // Display all posts in reverse order
+        displayPosts(allPosts.slice().reverse());
+      }
+    }
+
     // Display posts in the container
-    function displayPosts(rows) {
+    function displayPosts(rows, forcedPosition = null) {
       const container = document.getElementById('data-container');
       container.innerHTML = '';
       if (rows.length === 0) {
@@ -347,13 +365,15 @@
         return;
       }
       rows.forEach((row, index) => {
-        const position = index + 1;
+        // Use forcedPosition if provided (for single post display), else calculate position
+        const position = forcedPosition !== null ? forcedPosition : allPosts.length - index;
         const title = row.Title;
         let message = row.Message || 'No message provided';
         const tags = row.Tags;
         const postDiv = document.createElement('div');
         postDiv.className = 'post';
-        let isExpanded = false;
+        postDiv.id = `post-${position}`; // Set the post ID
+        let isExpanded = true; // Always expand when showing a single post
 
         // Add position number
         const positionElement = document.createElement('div');
