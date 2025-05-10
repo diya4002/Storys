@@ -303,15 +303,13 @@
     function filterPostsByTag() {
       const selectedTag = document.getElementById('tag-filter').value;
       const searchQuery = document.getElementById('search-input').value.toLowerCase();
-      let filteredPosts;
+      let filteredPosts = allPosts;
       if (selectedTag) {
         filteredPosts = allPosts.filter(row => {
           if (!row.Tags) return false;
           const tags = row.Tags.split(',').map(tag => tag.trim());
           return tags.includes(selectedTag);
         });
-      } else {
-        filteredPosts = allPosts;
       }
       // Apply search filter if search query exists
       if (searchQuery) {
@@ -322,12 +320,17 @@
           return title.includes(searchQuery) || message.includes(searchQuery) || tags.includes(searchQuery);
         });
       }
-      displayPosts(filteredPosts.slice().reverse());
+      // Map filtered posts to their original indices to preserve correct post IDs
+      const postsWithIndices = filteredPosts.map(row => ({
+        row,
+        originalIndex: allPosts.indexOf(row)
+      }));
+      displayPosts(postsWithIndices);
     }
 
     // Add search input event listener
     function setupSearch() {
-      const searchInput = regional.getElementById('search-input');
+      const searchInput = document.getElementById('search-input');
       searchInput.addEventListener('input', filterPostsByTag);
     }
 
@@ -342,38 +345,42 @@
     function displayPostsByFragment() {
       const fragment = window.location.hash; // e.g., "#post-1"
       if (fragment && fragment.startsWith('#post-')) {
-        const postId = fragment.replace('#post-', ''); // Extract the ID (e.g., "1")
-        const postIndex = allPosts.length - parseInt(postId); // Convert to index (reverse order)
+        const postId = parseInt(fragment.replace('#post-', '')); // Extract the ID (e.g., 1)
+        const postIndex = allPosts.length - postId; // Map postId to index (reverse order)
         if (postIndex >= 0 && postIndex < allPosts.length) {
           // Display only the specific post
-          displayPosts([allPosts[postIndex]], parseInt(postId));
+          displayPosts([{ row: allPosts[postIndex], originalIndex: postIndex }], postId);
         } else {
           displayError(`Post with ID ${postId} not found.`);
         }
       } else {
         // Display all posts in reverse order
-        displayPosts(allPosts.slice().reverse());
+        const postsWithIndices = allPosts.map((row, index) => ({
+          row,
+          originalIndex: index
+        })).reverse();
+        displayPosts(postsWithIndices);
       }
     }
 
     // Display posts in the container
-    function displayPosts(rows, forcedPosition = null) {
+    function displayPosts(postsWithIndices, forcedPosition = null) {
       const container = document.getElementById('data-container');
       container.innerHTML = '';
-      if (rows.length === 0) {
+      if (postsWithIndices.length === 0) {
         container.innerHTML = '<div class="error">No posts found for the selected tag or search query.</div>';
         return;
       }
-      rows.forEach((row, index) => {
-        // Use forcedPosition if provided (for single post display), else calculate position
-        const position = forcedPosition !== null ? forcedPosition : allPosts.length - index;
+      postsWithIndices.forEach(({ row, originalIndex }) => {
+        // Calculate position: use forcedPosition for single post, else use original index in reverse order
+        const position = forcedPosition !== null ? forcedPosition : allPosts.length - originalIndex;
         const title = row.Title;
         let message = row.Message || 'No message provided';
         const tags = row.Tags;
         const postDiv = document.createElement('div');
         postDiv.className = 'post';
         postDiv.id = `post-${position}`; // Set the post ID
-        let isExpanded = true; // Always expand when showing a single post
+        let isExpanded = forcedPosition !== null; // Expand if single post
 
         // Add position number
         const positionElement = document.createElement('div');
