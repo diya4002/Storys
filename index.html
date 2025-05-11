@@ -58,7 +58,7 @@
       width: 45%;
       padding: 5px;
       border: none;
-      border-radius: 3px;
+      border-radius: 3px;
       background-color: #fff;
       color: #4a2c1e;
       font-size: 16px;
@@ -195,6 +195,43 @@
       height: auto;
       cursor: pointer;
     }
+    /* Toast Notification Styling */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #e74c3c;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      font-size: 16px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+    .toast.show {
+      opacity: 1;
+    }
+    /* Advertisement Styling */
+    .ad-container {
+      margin-top: 15px;
+      text-align: center;
+      width: 100%;
+    }
+    .ad-container a {
+      display: inline-block;
+      text-decoration: none;
+    }
+    .ad-container img {
+      width: 100%;
+      max-width: 300px; /* Adjust max-width as needed */
+      height: auto;
+      border-radius: 5px;
+      display: block;
+      margin: 0 auto;
+    }
     @media (max-width: 600px) {
       .post {
         padding: 10px;
@@ -224,6 +261,14 @@
       .hide-telegram-link img {
         max-width: 120px;
       }
+      .toast {
+        width: 90%;
+        font-size: 14px;
+        text-align: center;
+      }
+      .ad-container img {
+        max-width: 200px; /* Smaller max-width for mobile */
+      }
     }
   </style>
 </head>
@@ -250,8 +295,15 @@
     // OpenSheet API URL (Ensure this Google Sheet is publicly shared)
     const SHEET_JSON_URL = 'https://opensheet.elk.sh/12ztLodAK-rcTxscpNl5Niyo5tByci6hvkXSpYfse4uQ/Sheet1';
 
+    // Advertisement variables
+    const adsimage = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhlrJ9vuM-KLCZsRBLIkcxZdCgWdwrAKxi5EGA79eoQBd-tpYPFsu7xmF5zZz86qXFspgibz_JmCE5AGsB5io4h0TvWlh723OoXAgYghFZ3wk3zViMCefyU9tizqYiGlyQpiv3YEB5AERQQg8D-l1i756W-dWg1zggd20mAOIMp0xFztj05k63y94nUJho/s829/tg.png'; // Replace with your ad image URL
+    const aadsherflink = 'https://t.me/+srJskB--ND5hZjI1'; // Replace with your ad link URL
+
     // Store fetched data globally
     let allPosts = [];
+
+    // Global variable to track if any speech is active
+    let isSpeaking = false;
 
     // Sample data as a fallback if the Google Sheet fails to load
     const sampleData = [
@@ -266,6 +318,24 @@
         Tags: "comedy, love"
       }
     ];
+
+    // Function to show toast notification
+    function showToast(message) {
+      let toast = document.querySelector('.toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          toast.remove();
+        }, 300); // Remove after fade-out
+      }, 3000); // Show for 3 seconds
+    }
 
     // Fetch and process JSON data
     function fetchSheetData() {
@@ -492,6 +562,7 @@
             if (!continueReading || currentLineIndex >= lines.length) {
               isPlaying = false;
               continueReading = false;
+              isSpeaking = false; // Reset global speaking state
               playButton.innerHTML = '▶';
               playButton.classList.remove('playing');
               playButton.setAttribute('aria-label', 'Play audio');
@@ -511,6 +582,7 @@
             };
             window.speechSynthesis.speak(utterance);
             isPlaying = true;
+            isSpeaking = true; // Set global speaking state
             playButton.innerHTML = '⏸';
             playButton.classList.add('playing');
             playButton.setAttribute('aria-label', 'Pause audio');
@@ -524,10 +596,16 @@
               speech.cancel();
               isPlaying = false;
               continueReading = false;
+              isSpeaking = false; // Reset global speaking state
               playButton.innerHTML = '▶';
               playButton.classList.remove('playing');
               playButton.setAttribute('aria-label', 'Play audio');
             } else {
+              if (isSpeaking) {
+                // Show toast if another speech is active
+                showToast('Speak start hai, pehle usse stop karo.');
+                return;
+              }
               continueReading = true;
               speakLine();
             }
@@ -553,7 +631,7 @@
           const shareUrl = `${window.location.origin}${window.location.pathname}#post-${position}`;
           const shareData = {
             title: title || 'Untitled',
-            text: message.substring(0, 100) + '...',
+            text: title,
             url: shareUrl
           };
 
@@ -583,6 +661,27 @@
           tagsElement.textContent = 'No tags';
         }
         postDiv.appendChild(tagsElement);
+
+        // Add advertisement if both adsimage and aadsherflink are non-empty
+        if (adsimage && aadsherflink && adsimage.trim() !== '' && aadsherflink.trim() !== '') {
+          const adContainer = document.createElement('div');
+          adContainer.className = 'ad-container';
+          const adLink = document.createElement('a');
+          adLink.href = aadsherflink;
+          adLink.target = '_blank';
+          adLink.rel = 'noopener noreferrer';
+          // Prevent click event from bubbling up to the post
+          adLink.addEventListener('click', (e) => {
+            e.stopPropagation();
+          });
+          const adImage = document.createElement('img');
+          adImage.src = adsimage;
+          adImage.alt = 'Advertisement';
+          adLink.appendChild(adImage);
+          adContainer.appendChild(adLink);
+          postDiv.appendChild(adContainer);
+        }
+
         container.appendChild(postDiv);
       });
     }
