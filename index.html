@@ -58,7 +58,7 @@
       width: 45%;
       padding: 5px;
       border: none;
-      border-radius: 3px;
+      border-radius: 3px;
       background-color: #fff;
       color: #4a2c1e;
       font-size: 16px;
@@ -296,8 +296,8 @@
     const SHEET_JSON_URL = 'https://opensheet.elk.sh/12ztLodAK-rcTxscpNl5Niyo5tByci6hvkXSpYfse4uQ/Sheet1';
 
     // Advertisement variables
-    const adsimage = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhlrJ9vuM-KLCZsRBLIkcxZdCgWdwrAKxi5EGA79eoQBd-tpYPFsu7xmF5zZz86qXFspgibz_JmCE5AGsB5io4h0TvWlh723OoXAgYghFZ3wk3zViMCefyU9tizqYiGlyQpiv3YEB5AERQQg8D-l1i756W-dWg1zggd20mAOIMp0xFztj05k63y94nUJho/s829/tg.png'; // Replace with your ad image URL
-    const aadsherflink = 'https://t.me/+srJskB--ND5hZjI1'; // Replace with your ad link URL
+    const adsimage = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhlrJ9vuM-KLCZsRBLIkcxZdCgWdwrAKxi5EGA79eoQBd-tpYPFsu7xmF5zZz86qXFspgibz_JmCE5AGsB5io4h0TvWlh723OoXAgYghFZ3wk3zViMCefyU9tizqYiGlyQpiv3YEB5AERQQg8D-l1i756W-dWg1zggd20mAOIMp0xFztj05k63y94nUJho/s829/tg.png';
+    const aadsherflink = 'https://t.me/+srJskB--ND5hZjI1';
 
     // Store fetched data globally
     let allPosts = [];
@@ -305,7 +305,7 @@
     // Global variable to track if any speech is active
     let isSpeaking = false;
 
-    // Sample data as a fallback if the Google Sheet fails to load
+    // Sample data as a fallback
     const sampleData = [
       {
         Title: "Sample Story 1",
@@ -333,8 +333,8 @@
         toast.classList.remove('show');
         setTimeout(() => {
           toast.remove();
-        }, 300); // Remove after fade-out
-      }, 3000); // Show for 3 seconds
+        }, 300);
+      }, 3000);
     }
 
     // Fetch and process JSON data
@@ -353,7 +353,6 @@
           console.log('Fetched data:', data);
           if (data && data.length > 0) {
             allPosts = data;
-            console.log('All posts:', allPosts);
             populateTagFilter();
             displayPostsByFragment();
           } else {
@@ -372,7 +371,7 @@
         });
     }
 
-    // Populate the tag filter dropdown with unique tags from posts
+    // Populate the tag filter dropdown
     function populateTagFilter() {
       const select = document.getElementById('tag-filter');
       select.innerHTML = '<option value="">All Tags ▼</option>';
@@ -383,7 +382,6 @@
         }
       });
       const sortedTags = Array.from(allTags).sort((a, b) => a.localeCompare(b));
-      console.log('Populating dropdown with tags:', sortedTags);
       sortedTags.forEach(tag => {
         const option = document.createElement('option');
         option.value = tag;
@@ -393,13 +391,12 @@
       select.addEventListener('change', filterPostsByTag);
     }
 
-    // Filter posts based on selected tag
+    // Filter posts based on selected tag and search query
     function filterPostsByTag() {
       const selectedTag = document.getElementById('tag-filter').value;
       const searchQuery = document.getElementById('search-input').value.toLowerCase();
       let filteredPosts = allPosts;
 
-      // Apply tag filter
       if (selectedTag) {
         filteredPosts = allPosts.filter(row => {
           if (!row.Tags) return false;
@@ -408,7 +405,6 @@
         });
       }
 
-      // Apply search filter
       if (searchQuery) {
         filteredPosts = filteredPosts.filter(row => {
           const title = (row.Title || '').toLowerCase();
@@ -418,57 +414,54 @@
         });
       }
 
-      // Map filtered posts to their indices and positions (newest first)
       const postsWithIndices = filteredPosts.map(row => {
         const originalIndex = allPosts.indexOf(row);
-        const originalPosition = originalIndex + 1; // Position: 1 for first post, 2 for second, etc.
+        const originalPosition = originalIndex + 1;
         return {
           row,
           originalIndex,
           originalPosition
         };
-      }).sort((a, b) => b.originalIndex - a.originalIndex); // Sort by originalIndex (descending) to keep newest first
+      }).sort((a, b) => b.originalIndex - a.originalIndex);
 
       displayPosts(postsWithIndices);
     }
 
-    // Add search input event listener
+    // Setup search input
     function setupSearch() {
       const searchInput = document.getElementById('search-input');
       searchInput.addEventListener('input', filterPostsByTag);
     }
 
-    // Function to split message into lines (sentences)
+    // Split message into lines for speech
     function splitIntoLines(text) {
       if (!text) return ['No message provided'];
       const sentences = text.match(/[^.!?]+[.!?]|\S+/g) || [text];
       return sentences.map(s => s.trim()).filter(s => s);
     }
 
-    // Display posts based on URL fragment or all posts
+    // Display posts based on URL fragment
     function displayPostsByFragment() {
-      const fragment = window.location.hash; // e.g., "#post-1"
+      const fragment = window.location.hash;
       if (fragment && fragment.startsWith('#post-')) {
-        const postId = parseInt(fragment.replace('#post-', '')); // Extract the ID (e.g., 1)
-        const postIndex = postId - 1; // Map postId to index (0-based)
+        const postId = parseInt(fragment.replace('#post-', ''));
+        const postIndex = postId - 1;
         if (postIndex >= 0 && postIndex < allPosts.length) {
-          // Display only the specific post
           displayPosts([{ row: allPosts[postIndex], originalIndex: postIndex, originalPosition: postId }], postId);
         } else {
           displayError(`Post with ID ${postId} not found.`);
         }
       } else {
-        // Display all posts with their positions (newest first, no reverse)
         const postsWithIndices = allPosts.map((row, index) => ({
           row,
           originalIndex: index,
-          originalPosition: index + 1 // Position: 1 for first post, 2 for second, etc.
-        })).sort((a, b) => b.originalIndex - a.originalIndex); // Sort by originalIndex (descending)
+          originalPosition: index + 1
+        })).sort((a, b) => b.originalIndex - a.originalIndex);
         displayPosts(postsWithIndices);
       }
     }
 
-    // Display posts in the container
+    // Display posts
     function displayPosts(postsWithIndices, forcedPosition = null) {
       const container = document.getElementById('data-container');
       container.innerHTML = '';
@@ -477,20 +470,18 @@
         return;
       }
       postsWithIndices.forEach(({ row, originalIndex, originalPosition }) => {
-        // Use forcedPosition if provided (e.g., from URL fragment), otherwise use the original position
         const position = forcedPosition !== null ? forcedPosition : originalPosition;
         const title = row.Title;
         let message = row.Message || 'No message provided';
         const tags = row.Tags;
         const postDiv = document.createElement('div');
         postDiv.className = 'post';
-        postDiv.id = `post-${position}`; // Set the post ID
-        let isExpanded = forcedPosition !== null; // Expand if single post
+        postDiv.id = `post-${position}`;
+        let isExpanded = forcedPosition !== null;
 
-        // Add position number
         const positionElement = document.createElement('div');
         positionElement.className = 'post-position';
-        positionElement.textContent = `#${position}`; // Use the original or forced position
+        positionElement.textContent = `#${position}`;
         postDiv.appendChild(positionElement);
 
         const titleElement = document.createElement('h2');
@@ -503,19 +494,25 @@
         const readMoreSpan = document.createElement('strong');
         readMoreSpan.style.cursor = 'pointer';
         readMoreSpan.style.color = '#4a2c1e';
+        readMoreSpan.setAttribute('role', 'button');
 
         // Function to update message display
         function updateMessageDisplay() {
           if (isExpanded) {
             messageElement.textContent = message;
             readMoreSpan.textContent = 'read less';
-          } else if (message.length > 250) {
-            const truncatedMessage = message.substring(0, 250);
-            messageElement.textContent = `${truncatedMessage}... `;
-            readMoreSpan.textContent = 'read more';
+            readMoreSpan.setAttribute('aria-label', 'Read less');
           } else {
-            messageElement.textContent = message;
-            readMoreSpan.textContent = '';
+            if (message.length > 250) {
+              const truncatedMessage = message.substring(0, 250);
+              messageElement.textContent = `${truncatedMessage}... `;
+              readMoreSpan.textContent = 'read more';
+              readMoreSpan.setAttribute('aria-label', 'Read more');
+            } else {
+              messageElement.textContent = message;
+              readMoreSpan.textContent = '';
+              readMoreSpan.setAttribute('aria-label', '');
+            }
           }
           if (readMoreSpan.textContent) {
             messageElement.appendChild(readMoreSpan);
@@ -525,17 +522,7 @@
         // Initial display
         updateMessageDisplay();
 
-        // Toggle message on click
-        postDiv.addEventListener('click', (e) => {
-          if (e.target === readMoreSpan || e.target.classList.contains('play-button') || e.target.classList.contains('share-button')) {
-            e.stopPropagation();
-            return;
-          }
-          isExpanded = !isExpanded;
-          updateMessageDisplay();
-        });
-
-        // Handle click on read more/less
+        // Toggle on read more/less click
         readMoreSpan.addEventListener('click', (e) => {
           e.stopPropagation();
           isExpanded = !isExpanded;
@@ -544,9 +531,8 @@
 
         postDiv.appendChild(messageElement);
 
-        // Check for Web Speech API support
+        // Speech synthesis
         if ('speechSynthesis' in window) {
-          // Add play/pause button
           const playButton = document.createElement('button');
           playButton.className = 'play-button';
           playButton.innerHTML = '▶';
@@ -557,12 +543,11 @@
           const lines = splitIntoLines(message);
           let continueReading = false;
 
-          // Function to speak the current line and continue to the next
           function speakLine() {
             if (!continueReading || currentLineIndex >= lines.length) {
               isPlaying = false;
               continueReading = false;
-              isSpeaking = false; // Reset global speaking state
+              isSpeaking = false;
               playButton.innerHTML = '▶';
               playButton.classList.remove('playing');
               playButton.setAttribute('aria-label', 'Play audio');
@@ -582,7 +567,7 @@
             };
             window.speechSynthesis.speak(utterance);
             isPlaying = true;
-            isSpeaking = true; // Set global speaking state
+            isSpeaking = true;
             playButton.innerHTML = '⏸';
             playButton.classList.add('playing');
             playButton.setAttribute('aria-label', 'Pause audio');
@@ -596,13 +581,12 @@
               speech.cancel();
               isPlaying = false;
               continueReading = false;
-              isSpeaking = false; // Reset global speaking state
+              isSpeaking = false;
               playButton.innerHTML = '▶';
               playButton.classList.remove('playing');
               playButton.setAttribute('aria-label', 'Play audio');
             } else {
               if (isSpeaking) {
-                // Show toast if another speech is active
                 showToast('Speak start hai, pehle usse stop karo.');
                 return;
               }
@@ -613,14 +597,13 @@
 
           postDiv.appendChild(playButton);
         } else {
-          // Display error message for unsupported browsers
           const errorMessage = document.createElement('div');
           errorMessage.className = 'speech-error';
           errorMessage.textContent = 'आपका ब्राउज़र स्पीच सपोर्ट नहीं करता है। (Your browser does not support speech.)';
           postDiv.appendChild(errorMessage);
         }
 
-        // Add share button
+        // Share button
         const shareButton = document.createElement('button');
         shareButton.className = 'share-button';
         shareButton.innerHTML = '🔗';
@@ -640,7 +623,6 @@
               .then(() => console.log('Shared successfully'))
               .catch(err => console.error('Error sharing:', err));
           } else {
-            // Fallback: Copy URL to clipboard
             navigator.clipboard.writeText(shareUrl)
               .then(() => alert('Post URL copied to clipboard!'))
               .catch(err => console.error('Failed to copy:', err));
@@ -662,7 +644,7 @@
         }
         postDiv.appendChild(tagsElement);
 
-        // Add advertisement if both adsimage and aadsherflink are non-empty
+        // Advertisement
         if (adsimage && aadsherflink && adsimage.trim() !== '' && aadsherflink.trim() !== '') {
           const adContainer = document.createElement('div');
           adContainer.className = 'ad-container';
@@ -670,7 +652,6 @@
           adLink.href = aadsherflink;
           adLink.target = '_blank';
           adLink.rel = 'noopener noreferrer';
-          // Prevent click event from bubbling up to the post
           adLink.addEventListener('click', (e) => {
             e.stopPropagation();
           });
@@ -686,13 +667,13 @@
       });
     }
 
-    // Display error message
+    // Display error
     function displayError(message) {
       const container = document.getElementById('data-container');
       container.innerHTML = `<div class="error">${message}</div>`;
     }
 
-    // Load data when the page loads
+    // Load data
     window.onload = () => {
       fetchSheetData();
       setupSearch();
